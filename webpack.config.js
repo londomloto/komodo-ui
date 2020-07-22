@@ -1,3 +1,4 @@
+const path = require('path');
 
 module.exports = {
     mode: "production",
@@ -85,5 +86,11 @@ module.exports = {
             commonjs: 'react-dom',
             amd: 'react-dom'
         }
+    },
+    output: {
+        path: path.join(__dirname, '/dist/'),
+        filename: 'komodo.js',
+        library: 'Komodo',
+        libraryTarget: 'umd'
     }
 };
