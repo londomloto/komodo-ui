@@ -85,6 +85,35 @@ module.exports = {
             commonjs2: 'react-dom',
             commonjs: 'react-dom',
             amd: 'react-dom'
+        },
+        'react-redux': {
+            root: 'ReactRedux',
+            commonjs2: 'react-redux',
+            commonjs: 'react-redux',
+            amd: 'react-redux'
+        },
+        'antd': {
+            root: 'antd',
+            commonjs2: 'antd',
+            commonjs: 'antd',
+            amd: 'antd'
+        },
+        'axios': {
+            root: 'axios',
+            commonjs2: 'axios',
+            commonjs: 'axios',
+            amd: 'axios'
+        },
+        'lodash': {
+            commonjs: 'lodash',
+            commonjs2: 'lodash',
+            amd: 'lodash',
+            root: '_'
+        }
+    },
+    resolve: {
+        alias: {
+            utils: path.resolve(__dirname, 'src/utils/')
         }
     },
     output: {

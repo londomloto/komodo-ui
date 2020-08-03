@@ -1,23 +1,32 @@
 import React from 'react';
 import axios from 'axios';
-import * as storage from 'utils/storage';
-import * as Sentry from '@sentry/browser';
+// import * as storage from 'utils/storage';
+// import * as Sentry from '@sentry/browser';
 import { notification } from 'antd';
 
-import { 
-    apiBaseUrl,
-    wafEnabled 
-} from './config';
+// import {  apiBaseUrl, wafEnabled } from './config';
 
-import history from './history';
+// import history from './history';
 
 const options = {
+    apiBaseUrl: 'http://127.0.0.1:8000/api',
+    wafEnabled: false,
     authorization: null,
     session: null, 
+    storage: null,
+    sentry: null,
+    history: null
+};
+
+const setupApi = (config = {}) => {
+    for(const [key, val] of Object.entries(config)) {
+        if (['authorization', 'session'].includes(key)) continue;
+        options[key] = val;
+    }
 };
 
 const api = axios.create({
-    baseURL: apiBaseUrl,
+    baseURL: options.apiBaseUrl,
     headers: {
         'Content-Type': 'application/json'
     },
@@ -44,13 +53,13 @@ const api = axios.create({
 });
 
 const handle401 = () => {
-    storage.save('session', {});
+    options.storage.save('session', {});
     options.authorization = null;
 
-    const { location: { pathname } } = history;
+    const { location: { pathname } } = options.history;
 
     if (pathname !== '/auth/login') {
-        history.replace('/auth/login');
+        options.history.replace('/auth/login');
     }
 }
 
@@ -63,7 +72,7 @@ api.interceptors.request.use(config => {
     };  
 
     if (!options.authorization) {
-        const { accessToken: authorization } = storage.load('session');
+        const { accessToken: authorization } = options.storage.load('session');
         options.authorization = authorization;
     }
 
@@ -72,7 +81,7 @@ api.interceptors.request.use(config => {
     }
 
     if (!options.session){
-        const { session } = storage.load('settings');
+        const { session } = options.storage.load('settings');
         options.session = session;
     }
 
@@ -82,7 +91,7 @@ api.interceptors.request.use(config => {
     
     config.headers.common = commonHeaders;
 
-    if (wafEnabled) {
+    if (options.wafEnabled) {
         if (config.method === 'put') {
             config.method = 'post';
             config.url += '/edit';
@@ -123,7 +132,7 @@ api.interceptors.response.use(
                     // valid, do nothing
                 } else {
                     if (message !== undefined) {
-                        Sentry.captureException(message);
+                        options.sentry.captureException(message);
                         notification.error({
                             message: 'Error',
                             description: (
@@ -162,9 +171,9 @@ api.interceptors.response.use(
         /*console.log(error.response)
         // console.log(error.response.data)
         // const storeStringify = JSON.stringify(error.response.config);
-        const { user } = storage.load('session');
+        const { user } = options.storage.load('session');
         const email = user.username;
-        Sentry.configureScope(
+        options.sentry.configureScope(
             scope => scope
                 .setLevel("Error")
                 .setUser({ email })
@@ -190,7 +199,7 @@ api.interceptors.response.use(
                     break;
             
                 default:
-                    Sentry.captureException(error);
+                    options.sentry.captureException(error);
                     notification.error({
                         message: 'Error',
                         description: "Application encountered an error. Don't worry, we've notified about this.",
@@ -199,14 +208,14 @@ api.interceptors.response.use(
             }
         // The request was made but no response was received
         } else if(error.request){
-            Sentry.captureException(error);
+            options.sentry.captureException(error);
             notification.error({
                 message: 'Server Error',
                 description: "Application server encountered an error. Don't worry, we've notified about this.",
             });
         // Something happened in setting up the request that triggered an Error
         } else {
-            Sentry.captureException(error);
+            options.sentry.captureException(error);
             notification.error({
                 message: 'Request Error',
                 description: "Application encountered an error. Don't worry, we've notified about this.",
@@ -218,8 +227,8 @@ api.interceptors.response.use(
 );
 
 api.configure = () => {
-    const { accessToken: authorization } = storage.load('session');
-    const { session } = storage.load('config');
+    const { accessToken: authorization } = options.storage.load('session');
+    const { session } = options.storage.load('config');
     options.authorization = authorization;
     options.session = session;
 };
@@ -240,10 +249,5 @@ api.download = (url,params) => {
     return download
 }
 
+export { setupApi };
 export default api;
-
-const setup = (config) => {
-    
-};
-
-export { setup };
